@@ -2,8 +2,8 @@
 require 'json'
 
 # Read in app ports
-rbpath = ENV['RBPATH']
-confpath = "#{rbpath}/../etc/ports.json"
+tuleshome = ENV['TULES_HOME']
+confpath = "#{tuleshome}/etc/ports.json"
 
 # Check for ConfigFile
 hasConfig = File.exist?(confpath)
