@@ -56,7 +56,7 @@ func main() {
 				reader = bufio.NewReader(os.Stdin)
 				fmt.Print("Upstream user name: ")
 				upstream, _ := reader.ReadString('\n')
-				upstream = strings.TrimRight(username, "\n")
+				upstream = strings.TrimRight(upstream, "\n")
 
 				p := pipe.Line(
 					pipe.Exec("git", parseArgs("remote -v")...),
