@@ -71,32 +71,6 @@ func main() {
 			},
 		},
 		{
-			Name:    "set-push-url",
-			Aliases: []string{"p"},
-			Usage:   "set push url to your fork instead of upstream",
-			Action: func(c *cli.Context) {
-				reader := bufio.NewReader(os.Stdin)
-				fmt.Print("Github user name: ")
-				username, _ := reader.ReadString('\n')
-				username = strings.TrimRight(username, "\n")
-
-				reader = bufio.NewReader(os.Stdin)
-				fmt.Print("Upstream user name: ")
-				upstream, _ := reader.ReadString('\n')
-				upstream = strings.TrimRight(username, "\n")
-
-				p := pipe.Line(
-					pipe.Exec("git", parseArgs("remote -v")...),
-					pipe.Exec("awk", "{ print $2 }"),
-					pipe.Exec("sed", "s/"+upstream+"/"+username+"/g"),
-					pipe.Exec("head", "-1"),
-				)
-
-				_, url := runPipe(p)
-				runCmd("git remote set-url origin --push " + url)
-			},
-		},
-		{
 			Name:    "origin-diff",
 			Aliases: []string{"o"},
 			Usage:   "compare diff with origin",
@@ -122,12 +96,24 @@ func main() {
 			},
 		},
 		{
-			Name:    "sync-remote",
-			Aliases: []string{"s"},
-			Usage:   "sync all remote branches",
+			Name:    "sync-origin",
+			Aliases: []string{"o"},
+			Usage:   "sync all local branches to remote",
 			Action: func(c *cli.Context) {
-				go runCmd("git remote update")
+				runCmd("git remote update")
 				runCmd("git remote prune origin")
+			},
+		},
+		{
+			Name:    "sync-upstream",
+			Aliases: []string{"u"},
+			Usage:   "synch current branch with upstream",
+			Action: func(c *cli.Context) {
+				currentBranch := outputCmd("git rev-parse --abbrev-ref HEAD")
+
+				fmt.Println(currentBranch)
+				runCmd("git fetch upstream")
+				runCmd("git reset upstream/" + currentBranch)
 			},
 		},
 		{
@@ -135,22 +121,34 @@ func main() {
 			Aliases: []string{"q"},
 			Usage:   "sync all remote branches",
 			Action: func(c *cli.Context) {
-				runCmd("git add .")
-				runCmd("git commit -m \"Squashable\"")
+				runCmd("git commit -am Squashable")
 				runCmd("git rebase -i HEAD~2")
 			},
 		},
 		{
 			Name:    "test",
 			Aliases: []string{"t"},
-			Usage:   "For testing APIs",
+			Usage:   "set push url to your fork instead of upstream",
 			Action: func(c *cli.Context) {
 				reader := bufio.NewReader(os.Stdin)
 				fmt.Print("Github user name: ")
 				username, _ := reader.ReadString('\n')
 				username = strings.TrimRight(username, "\n")
 
-				runCmd("echo Hello World")
+				reader = bufio.NewReader(os.Stdin)
+				fmt.Print("Upstream user name: ")
+				upstream, _ := reader.ReadString('\n')
+				upstream = strings.TrimRight(username, "\n")
+
+				p := pipe.Line(
+					pipe.Exec("git", parseArgs("remote -v")...),
+					pipe.Exec("awk", "{ print $2 }"),
+					pipe.Exec("sed", "s/"+upstream+"/"+username+"/g"),
+					pipe.Exec("head", "-1"),
+				)
+
+				_, url := runPipe(p)
+				runCmd("git remote set-url origin --push " + url)
 			},
 		},
 	}
@@ -188,6 +186,13 @@ func runCmd(command string) {
 	cmd.Stdout = os.Stdout
 	cmd.Stdin = os.Stdin
 	cmd.Run()
+}
+
+func outputCmd(command string) string {
+	cmd := mkCmd(command)
+	out, err := cmd.Output()
+	errCheck(err)
+	return string(out)
 }
 
 // runPipe runs the created pipeline
