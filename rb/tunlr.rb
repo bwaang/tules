@@ -12,6 +12,13 @@ puts conf_path if has_config
 f = File.read(conf_path) if has_config
 ports = JSON.parse(f) if has_config
 
+if ARGV.length < 2
+  puts "Usage tunlr [env] [port] [prefix-port]"
+  puts "        env - environment or ip address (reads etc/ports.json & .ssh/config)"
+  puts "        port - the port to tunnel to"
+  puts "        prefix-port - a prefix to use"
+end
+
 host = ARGV.shift
 # if host exists in config use that one
 host = ports['envs'][host] if ports['envs'].has_key? host and has_config

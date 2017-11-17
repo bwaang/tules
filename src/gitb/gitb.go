@@ -29,7 +29,7 @@ func main() {
 	app.Usage = DESC
 
 	// To enable bash completion in your ~/.bash_profile add:
-	// PROG=gitta source <path to this executable>
+	// PROG=gitb source <path to this executable>
 	app.EnableBashCompletion = true
 
 	app.Flags = []cli.Flag{
@@ -71,20 +71,30 @@ func main() {
 			},
 		},
 		{
-			Name:    "origin-diff",
-			Aliases: []string{"o"},
-			Usage:   "compare diff with origin",
+			Name:    "commit-and-squash",
+			Aliases: []string{"s"},
+			Usage:   "commit and squash changes",
 			Action: func(c *cli.Context) {
-				p := pipe.Line(
-					pipe.Exec("git", parseArgs("branch -a")...),
-					pipe.Exec("grep", "'*'"),
-					pipe.Exec("awk", "{ print $NF }"),
-				)
-
-				_, currentBranch := runPipe(p)
-
-				fmt.Println(currentBranch)
-				runCmd("git diff --name-status origin.." + currentBranch)
+				runCmd("git commit -am Squashable")
+				runCmd("git rebase -i HEAD~2")
+				// runCmd("git rebase -i --root master") // For initial commit
+			},
+		},
+		{
+			Name:    "force-push",
+			Aliases: []string{"f"},
+			Usage:   "force push current branch to origin and upstream",
+			Action: func(c *cli.Context) {
+				go runCmd("git push -f")
+				runCmd("git push -f upstream")
+			},
+		},
+		{
+			Name:    "log-one-line",
+			Aliases: []string{"1"},
+			Usage:   "print out one liner log",
+			Action: func(c *cli.Context) {
+				runCmd("git log --oneline")
 			},
 		},
 		{
@@ -113,16 +123,8 @@ func main() {
 
 				fmt.Println(currentBranch)
 				runCmd("git fetch upstream")
+				runCmd("git remote prune upstream")
 				runCmd("git reset upstream/" + currentBranch)
-			},
-		},
-		{
-			Name:    "quick-commit-squash",
-			Aliases: []string{"q"},
-			Usage:   "sync all remote branches",
-			Action: func(c *cli.Context) {
-				runCmd("git commit -am Squashable")
-				runCmd("git rebase -i HEAD~2")
 			},
 		},
 		{
