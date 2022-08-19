@@ -20,4 +20,11 @@ Next update your `$PATH` in your `~/.bash_profile` to include the `bin` director
 ```bash
 $PATH="$PATH:$TULES_HOME/bin"
 ```
+## GO Support
 
+To compile and build with go 1.18 and module support, add the following to your .zshrc directory
+
+```bash
+export GOBIN="$TULES_HOME/bin"
+export GOPATH="$TULES_HOME"
+```
