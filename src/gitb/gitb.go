@@ -114,6 +114,34 @@ func main() {
 				runCmd("git remote prune origin")
 			},
 		},
+    {
+    	Name:    "update-release",
+			Aliases: []string{"r"},
+			Usage:   "update latest release with nightly",
+			Action: func(c *cli.Context) {
+        runCmd("git checkout nightly")
+				runCmd("git fetch upstream")
+        runCmd("git reset --hard upstream/nightly")
+
+        p := pipe.Line(
+          pipe.Exec("git", "branch", "-r"),
+          pipe.Exec("grep", "upstream/release"),
+          pipe.Exec("tail", "-1"),
+        )
+
+        _, releaseRef := runPipe(p)
+
+        fmt.Println("Creating branch off latest release branch: " + releaseRef)
+        releaseBranch := strings.Split(releaseRef, "/")[1]
+
+        runCmd("git checkout -b " + releaseBranch + " " + releaseRef)
+        runCmd("git reset --hard upstream/nightly")
+        runCmd("git push")
+        runCmd("git checkout nightly")
+        runCmd("git branch -d " + releaseBranch)
+			},
+		},
+
 		{
 			Name:    "sync-upstream",
 			Aliases: []string{"u"},
