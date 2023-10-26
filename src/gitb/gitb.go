@@ -43,34 +43,7 @@ func main() {
 	}
 
 	app.Commands = []cli.Command{
-		{
-			Name:    "add-upstream",
-			Aliases: []string{"a"},
-			Usage:   "adds the upstream remote to the stack",
-			Action: func(c *cli.Context) {
-				reader := bufio.NewReader(os.Stdin)
-				fmt.Print("Github user name: ")
-				username, _ := reader.ReadString('\n')
-				username = strings.TrimRight(username, "\n")
-
-				reader = bufio.NewReader(os.Stdin)
-				fmt.Print("Upstream user name: ")
-				upstream, _ := reader.ReadString('\n')
-				upstream = strings.TrimRight(upstream, "\n")
-
-				p := pipe.Line(
-					pipe.Exec("git", parseArgs("remote -v")...),
-					pipe.Exec("grep", "origin"),
-					pipe.Exec("awk", "{ print $2 }"),
-					pipe.Exec("sed", "s/"+username+"/"+upstream+"/g"),
-					pipe.Exec("head", "-1"),
-				)
-
-				_, url := runPipe(p)
-				runCmd("git remote add upstream " + url)
-			},
-		},
-		{
+	  {
 			Name:    "commit-and-squash",
 			Aliases: []string{"s"},
 			Usage:   "commit and squash changes",
@@ -78,15 +51,6 @@ func main() {
 				runCmd("git commit -am Squashable")
 				runCmd("git rebase -i HEAD~2")
 				// runCmd("git rebase -i --root master") // For initial commit
-			},
-		},
-		{
-			Name:    "force-push",
-			Aliases: []string{"f"},
-			Usage:   "force push current branch to origin and upstream",
-			Action: func(c *cli.Context) {
-				go runCmd("git push -f")
-				runCmd("git push -f upstream")
 			},
 		},
 		{
@@ -105,27 +69,18 @@ func main() {
 				runCmd("git log --graph --oneline --decorate --all")
 			},
 		},
-		{
-			Name:    "sync-origin",
-			Aliases: []string{"o"},
-			Usage:   "sync all local branches to remote",
-			Action: func(c *cli.Context) {
-				runCmd("git remote update")
-				runCmd("git remote prune origin")
-			},
-		},
     {
     	Name:    "update-release",
 			Aliases: []string{"r"},
 			Usage:   "update latest release with nightly",
 			Action: func(c *cli.Context) {
         runCmd("git checkout nightly")
-				runCmd("git fetch upstream")
-        runCmd("git reset --hard upstream/nightly")
+				runCmd("git fetch origin")
+        runCmd("git reset --hard origin/nightly")
 
         p := pipe.Line(
           pipe.Exec("git", "branch", "-r"),
-          pipe.Exec("grep", "upstream/release"),
+          pipe.Exec("grep", "origin/release"),
           pipe.Exec("tail", "-1"),
         )
 
@@ -135,24 +90,10 @@ func main() {
         releaseBranch := strings.Split(releaseRef, "/")[1]
 
         runCmd("git checkout -b " + releaseBranch + " " + releaseRef)
-        runCmd("git reset --hard upstream/nightly")
+        runCmd("git reset --hard origin/nightly")
         runCmd("git push")
         runCmd("git checkout nightly")
         runCmd("git branch -d " + releaseBranch)
-			},
-		},
-
-		{
-			Name:    "sync-upstream",
-			Aliases: []string{"u"},
-			Usage:   "synch current branch with upstream",
-			Action: func(c *cli.Context) {
-				currentBranch := outputCmd("git rev-parse --abbrev-ref HEAD")
-
-				fmt.Println(currentBranch)
-				runCmd("git fetch upstream")
-				runCmd("git remote prune upstream")
-				runCmd("git reset upstream/" + currentBranch)
 			},
 		},
 		{
